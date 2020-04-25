@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grtest
+  namespace: globalreserve-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grtest
+  template:
+    metadata:
+      labels:
+        app: grtest
+    spec:
+      schedulerName: globalreserve-scheduler
+      containers:
+      - image: nginx
+        imagePullPolicy: IfNotPresent
+        name: nginx
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+          requests:
+            cpu: 200m

@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: globalreserve-local-config
+  namespace: globalreserve-test
+data:
+  scheduler-config.yaml: |
+    apiVersion: kubescheduler.config.k8s.io/v1alpha1
+    kind: KubeSchedulerConfiguration
+    schedulerName: globalreserve-scheduler
+    leaderElection:
+      leaderElect: true
+      lockObjectName: globalreserve-scheduler
+      lockObjectNamespace: globalreserve-test
+    plugins:
+      reserve:
+        enabled:
+        - name: "global-resource-reserve-plugin"
+      unreserve:
+        enabled:
+        - name: "global-resource-reserve-plugin"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: globalreserve-scheduler
+  namespace: globalreserve-test
+  labels:
+    component: globalreserve-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: globalreserve-scheduler
+  template:
+    metadata:
+      labels:
+        component: globalreserve-scheduler
+    spec:
+      serviceAccount: globalreserve-sa
+      priorityClassName: system-cluster-critical
+      volumes:
+        - name: scheduler-config
+          configMap:
+            name: globalreserve-local-config
+      containers:
+        - name: scheduler-ctrl
+          image: globalreserve-scheduler:0.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - kube-globalreserve-scheduler
+            - --config=/etc/kubernetes/scheduler-config.yaml
+            - --v=3
+          resources:
+            requests:
+              cpu: "500m"
+          volumeMounts:
+            - name: scheduler-config
+              mountPath: /etc/kubernetes
