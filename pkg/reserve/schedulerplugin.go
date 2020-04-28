@@ -34,7 +34,7 @@ type GlobalReservePlugin struct {
 // GRConf scheduler plugin configuration
 type GRConf struct {
 	// if globalreserve works in another pod, this field must be specified
-	RemoteURL string `json:"remote-url,omitempty"`
+	RemoteURL string `json:"remoteURL,omitempty"`
 	//globalreserve http server listening port
 	Port int `json:"port,omitempty"`
 }
