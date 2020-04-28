@@ -18,6 +18,7 @@ package reserve
 
 import (
 	"context"
+	"strconv"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,7 +33,10 @@ type GlobalReservePlugin struct {
 
 // GRConf scheduler plugin configuration
 type GRConf struct {
+	// if globalreserve works in another pod, this field must be specified
 	RemoteURL string `json:"remote-url,omitempty"`
+	//globalreserve http server listening port
+	Port int `json:"port,omitempty"`
 }
 
 var _ framework.ReservePlugin = &GlobalReservePlugin{}
@@ -69,10 +73,35 @@ func (rp *GlobalReservePlugin) Unreserve(ctx context.Context, state *framework.C
 func New(config *runtime.Unknown, handler framework.FrameworkHandle) (framework.Plugin, error) {
 	klog.V(3).Infof("global reserve plugin is created")
 
-	var impl GlobalReserverInterface
-	impl, err := NewLocalReserve(handler)
-	if err != nil {
+	conf := &GRConf{}
+	if err := framework.DecodeInto(config, conf); err != nil {
+		klog.Errorf("Decoding configuration failed with: %s", err.Error())
 		return nil, err
+	}
+
+	var impl GlobalReserverInterface
+	var err error
+
+	if len(conf.RemoteURL) > 0 {
+		remote := conf.RemoteURL
+		klog.Infof("Remote Global Reserve URL is %s", remote)
+
+		if impl, err = NewHTTPClient(remote, 5); err != nil {
+			klog.Errorf("Creating Http client failed with: %s", err.Error())
+			return nil, err
+		}
+	} else {
+		port := "23456"
+
+		if conf.Port > 1024 && conf.Port < 65535 {
+			port = strconv.Itoa(conf.Port)
+		}
+
+		impl, err = NewLocalReserve(handler, port)
+		if err != nil {
+			klog.Errorf("Creating GlobalReserve failed with: %s", err.Error())
+			return nil, err
+		}
 	}
 
 	return &GlobalReservePlugin{
