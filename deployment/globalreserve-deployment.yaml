@@ -19,6 +19,10 @@ data:
       unreserve:
         enabled:
         - name: "global-resource-reserve-plugin"
+    pluginConfig:
+    - name: "global-resource-reserve-plugin"
+      args:
+        port: 23456
 ---
 apiVersion: apps/v1
 kind: Deployment

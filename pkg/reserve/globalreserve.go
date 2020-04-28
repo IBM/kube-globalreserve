@@ -46,7 +46,7 @@ type GloalReserve struct {
 var _ GlobalReserverInterface = &GloalReserve{}
 
 //NewLocalReserve return a GloalReserve with can works with k8s default scheduler plugin
-func NewLocalReserve(handler framework.FrameworkHandle) (GlobalReserverInterface, error) {
+func NewLocalReserve(handler framework.FrameworkHandle, listeningPort string) (GlobalReserverInterface, error) {
 	gr := &GloalReserve{
 		ResTypeToID:    make(map[v1.ResourceName]int),
 		ResTypeMaxKind: 0,
@@ -98,8 +98,10 @@ func NewLocalReserve(handler framework.FrameworkHandle) (GlobalReserverInterface
 	router.POST(ReserveHTTPPathPrefix, AddReserveRoute(gr))
 	router.POST(UnreserveHTTPPathPrefix, AddUnreserveRoute(gr))
 
+	klog.V(3).Infof("GloalReserve is listening %s", listeningPort)
+
 	go func() {
-		log.Println(http.ListenAndServe(":23456", router))
+		log.Println(http.ListenAndServe(":"+listeningPort, router))
 	}()
 
 	return gr, nil

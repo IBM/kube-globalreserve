@@ -2,6 +2,6 @@ FROM debian:stretch-slim
 
 WORKDIR /
 
-COPY kube-globalreserve-scheduler /usr/local/bin
+COPY bin/kube-globalreserve-scheduler /usr/local/bin
 
 CMD ["kube-globalreserve-scheduler"]
